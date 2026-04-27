@@ -1,0 +1,63 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lector de comprobantes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .file-block { margin-bottom: 30px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        h2 { margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>Lector de comprobantes</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <label for="banco">Banco:</label>
+        <select name="banco" id="banco" required>
+            <option value="BBVA">BBVA</option>
+            <option value="Bancor">Bancor</option>
+        </select>
+        <br><br>
+        <label for="operacion">Operación:</label>
+        <select name="operacion" id="operacion" required>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Transferencias">Transferencias</option>
+            <option value="Cheques emitidos">Cheques emitidos</option>
+            <option value="Cheques de terceros">Cheques de terceros</option>
+            <option value="FCI">FCI</option>
+        </select>
+        <br><br>
+        <label for="file">Subir archivos (imagen o PDF) — puedes seleccionar varios:</label>
+        <input type="file" name="file" id="file" accept=".jpg,.jpeg,.png,.pdf" multiple required>
+        <br><br>
+        <button type="submit">Procesar</button>
+    </form>
+
+    {% if results %}
+    <h2>Resultados</h2>
+    <p><strong>Banco:</strong> {{ banco }} | <strong>Operación:</strong> {{ operacion }}</p>
+
+    {% for item in results %}
+    <div class="file-block">
+        <h3>Archivo: {{ item.filename }}</h3>
+        <table>
+            <tr>
+                <th>Campo</th>
+                <th>Valor</th>
+            </tr>
+            {% for row in item.parsed %}
+            <tr>
+                <td>{{ row.Campo }}</td>
+                <td>{{ row.Valor }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endfor %}
+    {% endif %}
+</body>
+</html>

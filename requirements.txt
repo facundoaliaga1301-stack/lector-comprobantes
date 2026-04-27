@@ -1,0 +1,6 @@
+flask
+pytesseract
+Pillow
+pymupdf
+gspread
+oauth2client
