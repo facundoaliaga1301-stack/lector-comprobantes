@@ -1,63 +1,121 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Lector de comprobantes</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .file-block { margin-bottom: 30px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        h2 { margin-top: 30px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lector de Comprobantes — A-SA</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f8f6; min-height: 100vh; }
+
+    .topbar { background: white; border-bottom: 0.5px solid #e0e0d8; padding: 12px 24px; display: flex; align-items: center; gap: 10px; }
+    .topbar-dot { width: 8px; height: 8px; border-radius: 50%; background: #1a3d1a; }
+    .topbar-title { font-size: 14px; font-weight: 500; color: #1a3d1a; }
+    .topbar-sub { font-size: 12px; color: #aaa; margin-left: 4px; }
+
+    .container { max-width: 700px; margin: 40px auto; padding: 0 24px; }
+
+    .card { background: white; border: 0.5px solid #e0e0d8; border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+
+    label { display: block; font-size: 12px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+
+    select { width: 100%; padding: 9px 12px; border: 0.5px solid #e0e0d8; border-radius: 8px; font-size: 13px; background: white; color: #1a1a1a; appearance: none; cursor: pointer; outline: none; }
+    select:focus { border-color: #1a3d1a; }
+
+    .field { margin-bottom: 16px; }
+
+    .upload-area { border: 1.5px dashed #c0d8c0; border-radius: 12px; padding: 32px; text-align: center; cursor: pointer; transition: background 0.2s; background: #f8fdf8; margin-bottom: 16px; }
+    .upload-area:hover { background: #f0f8f0; border-color: #1a3d1a; }
+    .upload-area input { display: none; }
+    .upload-icon { font-size: 28px; margin-bottom: 8px; }
+    .upload-text { font-size: 13px; color: #888; }
+    .upload-text strong { color: #1a3d1a; }
+    .file-count { font-size: 12px; color: #1a3d1a; margin-top: 6px; font-weight: 500; }
+
+    .btn { width: 100%; padding: 11px; background: #1a3d1a; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.85; }
+
+    .results-title { font-size: 15px; font-weight: 500; color: #1a3d1a; margin-bottom: 16px; }
+
+    .result-card { background: white; border: 0.5px solid #e0e0d8; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+    .result-header { background: #e8f0e0; padding: 10px 16px; font-size: 12px; font-weight: 500; color: #1a3d1a; border-bottom: 0.5px solid #c0d8c0; }
+    .result-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .result-table tr { border-bottom: 0.5px solid #f0f0f0; }
+    .result-table tr:last-child { border-bottom: none; }
+    .result-table td { padding: 9px 16px; }
+    .result-table td:first-child { color: #888; width: 45%; font-size: 12px; }
+    .result-table td:last-child { color: #1a1a1a; font-weight: 500; }
+    .result-table tr:nth-child(even) { background: #fafafa; }
+
+    .empty-val { color: #ccc !important; font-weight: 400 !important; font-style: italic; }
+  </style>
 </head>
 <body>
-    <h1>Lector de comprobantes</h1>
+
+<div class="topbar">
+  <div class="topbar-dot"></div>
+  <span class="topbar-title">A-SA</span>
+  <span class="topbar-sub">/ Lector de comprobantes</span>
+</div>
+
+<div class="container">
+  <div class="card">
     <form method="POST" enctype="multipart/form-data">
-        <label for="banco">Banco:</label>
-        <select name="banco" id="banco" required>
-            <option value="BBVA">BBVA</option>
-            <option value="Bancor">Bancor</option>
+      <div class="field">
+        <label>Banco</label>
+        <select name="banco">
+          <option value="BBVA" {% if banco == 'BBVA' %}selected{% endif %}>BBVA</option>
         </select>
-        <br><br>
-        <label for="operacion">Operación:</label>
-        <select name="operacion" id="operacion" required>
-            <option value="Efectivo">Efectivo</option>
-            <option value="Transferencias">Transferencias</option>
-            <option value="Cheques emitidos">Cheques emitidos</option>
-            <option value="Cheques de terceros">Cheques de terceros</option>
-            <option value="FCI">FCI</option>
+      </div>
+
+      <div class="field">
+        <label>Operación</label>
+        <select name="operacion">
+          <option value="Transferencias" {% if operacion == 'Transferencias' %}selected{% endif %}>Transferencias</option>
+          <option value="Efectivo" {% if operacion == 'Efectivo' %}selected{% endif %}>Efectivo</option>
         </select>
-        <br><br>
-        <label for="file">Subir archivos (imagen o PDF) — puedes seleccionar varios:</label>
-        <input type="file" name="file" id="file" accept=".jpg,.jpeg,.png,.pdf" multiple required>
-        <br><br>
-        <button type="submit">Procesar</button>
+      </div>
+
+      <div class="field">
+        <label>Archivos</label>
+        <label class="upload-area" for="fileInput">
+          <div class="upload-icon">📄</div>
+          <div class="upload-text">Arrastrá o <strong>elegí archivos</strong> para subir</div>
+          <div class="upload-text">PDF o imagen — podés seleccionar varios</div>
+          <div class="file-count" id="fileCount"></div>
+          <input type="file" name="file" id="fileInput" multiple accept=".pdf,.png,.jpg,.jpeg" onchange="updateCount(this)">
+        </label>
+      </div>
+
+      <button type="submit" class="btn">Procesar comprobantes</button>
     </form>
+  </div>
 
-    {% if results %}
-    <h2>Resultados</h2>
-    <p><strong>Banco:</strong> {{ banco }} | <strong>Operación:</strong> {{ operacion }}</p>
+  {% if results %}
+  <div class="results-title">{{ results|length }} comprobante{% if results|length > 1 %}s{% endif %} procesado{% if results|length > 1 %}s{% endif %}</div>
+  {% for result in results %}
+  <div class="result-card">
+    <div class="result-header">{{ result.filename }}</div>
+    <table class="result-table">
+      {% for item in result.parsed %}
+      <tr>
+        <td>{{ item.Campo }}</td>
+        <td {% if not item.Valor %}class="empty-val"{% endif %}>{{ item.Valor if item.Valor else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endfor %}
+  {% endif %}
 
-    {% for item in results %}
-    <div class="file-block">
-        <h3>Archivo: {{ item.filename }}</h3>
-        <table>
-            <tr>
-                <th>Campo</th>
-                <th>Valor</th>
-            </tr>
-            {% for row in item.parsed %}
-            <tr>
-                <td>{{ row.Campo }}</td>
-                <td>{{ row.Valor }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
-    {% endfor %}
-    {% endif %}
+</div>
+
+<script>
+  function updateCount(input) {
+    const count = input.files.length;
+    document.getElementById('fileCount').textContent = count > 0 ? count + ' archivo' + (count > 1 ? 's' : '') + ' seleccionado' + (count > 1 ? 's' : '') : '';
+  }
+</script>
+
 </body>
 </html>
