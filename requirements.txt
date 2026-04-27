@@ -4,4 +4,4 @@ PyMuPDF
 gspread
 oauth2client
 google-cloud-vision
-google-authgot
+google-auth
