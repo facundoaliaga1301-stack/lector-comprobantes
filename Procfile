@@ -1,1 +1,1 @@
-web: python app.py
+web: apt-get install -y tesseract-ocr tesseract-ocr-spa 2>/dev/null; python app.py
