@@ -1,6 +1,7 @@
 flask
-pytesseract
 Pillow
-pymupdf
+PyMuPDF
 gspread
 oauth2client
+google-cloud-vision
+google-authgot
