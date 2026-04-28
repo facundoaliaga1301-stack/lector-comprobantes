@@ -35,6 +35,13 @@ def image_to_base64(filepath):
     with open(filepath, "rb") as f:
         return base64.b64encode(f.read()).decode("utf-8")
 
+def to_str(val):
+    if isinstance(val, dict):
+        return json.dumps(val, ensure_ascii=False)
+    if isinstance(val, list):
+        return ", ".join(str(v) for v in val)
+    return str(val) if val else ""
+
 def ocr_with_mistral(filepath):
     prompt = """Analizá este comprobante bancario o documento financiero y extraé los datos en formato JSON.
 Si no encontrás algún campo dejalo como string vacío.
@@ -129,22 +136,22 @@ def generate_excel(results):
         data = result["data"]
         row = [
             result["filename"],
-            data.get("tipo_documento", ""),
-            data.get("banco", ""),
-            data.get("fecha", ""),
-            data.get("hora", ""),
-            data.get("importe", ""),
-            data.get("moneda", ""),
-            data.get("cuenta_origen", ""),
-            data.get("titular_origen", ""),
-            data.get("cuit_origen", ""),
-            data.get("cuenta_destino", ""),
-            data.get("titular_destino", ""),
-            data.get("cuit_destino", ""),
-            data.get("nro_referencia", ""),
-            data.get("motivo", ""),
-            data.get("concepto", ""),
-            data.get("estado", "")
+            to_str(data.get("tipo_documento", "")),
+            to_str(data.get("banco", "")),
+            to_str(data.get("fecha", "")),
+            to_str(data.get("hora", "")),
+            to_str(data.get("importe", "")),
+            to_str(data.get("moneda", "")),
+            to_str(data.get("cuenta_origen", "")),
+            to_str(data.get("titular_origen", "")),
+            to_str(data.get("cuit_origen", "")),
+            to_str(data.get("cuenta_destino", "")),
+            to_str(data.get("titular_destino", "")),
+            to_str(data.get("cuit_destino", "")),
+            to_str(data.get("nro_referencia", "")),
+            to_str(data.get("motivo", "")),
+            to_str(data.get("concepto", "")),
+            to_str(data.get("estado", ""))
         ]
         ws.append(row)
 
@@ -165,7 +172,7 @@ def index():
                 filepath = os.path.join(UPLOAD_FOLDER, filename)
                 file.save(filepath)
                 data = ocr_with_mistral(filepath)
-                parsed = [{"Campo": k.replace("_", " ").title(), "Valor": v} for k, v in data.items()]
+                parsed = [{"Campo": k.replace("_", " ").title(), "Valor": v if not isinstance(v, (dict, list)) else to_str(v)} for k, v in data.items()]
                 results.append({"filename": filename, "parsed": parsed, "data": data})
         if results:
             ultimo_excel = generate_excel(results)
