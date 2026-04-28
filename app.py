@@ -5,8 +5,8 @@ import re
 import json
 import base64
 import gspread
+import requests
 from oauth2client.service_account import ServiceAccountCredentials
-from mistralai import Mistral
 
 app = Flask(__name__)
 UPLOAD_FOLDER = "uploads"
@@ -14,8 +14,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 SHEET_ID = "17yVw5YF4MY9Hi5dCYl9zGh0m7k3XsJIn7rUTwbzy6LY"
 SHEET_NAME = "Hoja 1"
-
-mistral = Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
+MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY")
 
 def pdf_to_base64_images(filepath):
     doc = fitz.open(filepath)
@@ -67,27 +66,34 @@ Devolvé SOLO el JSON sin texto adicional ni markdown.
         ext = filepath.lower().split(".")[-1]
         media_type = "image/jpeg" if ext in ["jpg", "jpeg"] else "image/png"
 
-    response = mistral.chat.complete(
-        model="pixtral-12b-latest",
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": f"data:{media_type};base64,{b64}"
-                    },
-                    {
-                        "type": "text",
-                        "text": prompt
-                    }
-                ]
-            }
-        ]
+    response = requests.post(
+        "https://api.mistral.ai/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {MISTRAL_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "model": "pixtral-12b-latest",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": f"data:{media_type};base64,{b64}"
+                        },
+                        {
+                            "type": "text",
+                            "text": prompt
+                        }
+                    ]
+                }
+            ]
+        }
     )
 
     try:
-        text = response.choices[0].message.content.strip()
+        text = response.json()["choices"][0]["message"]["content"].strip()
         text = re.sub(r"```json|```", "", text).strip()
         return json.loads(text)
     except:
