@@ -30,7 +30,7 @@ def pdf_to_images(filepath):
     return images
 
 def ocr_with_gemini(filepath):
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-2.0-flash")
     
     prompt = """Analizá este comprobante bancario o documento financiero y extraé los siguientes datos en formato JSON.
 Si no encontrás algún campo, dejalo como string vacío "".
