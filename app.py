@@ -6,7 +6,7 @@ import json
 import base64
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from mistralai import Mistral
+from mistralai.client import MistralClient
 from PIL import Image
 import io
 
@@ -17,7 +17,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 SHEET_ID = "17yVw5YF4MY9Hi5dCYl9zGh0m7k3XsJIn7rUTwbzy6LY"
 SHEET_NAME = "Hoja 1"
 
-client_mistral = Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
+client_mistral = MistralClient(api_key=os.environ.get("MISTRAL_API_KEY"))
 
 def pdf_to_base64_images(filepath):
     doc = fitz.open(filepath)
