@@ -1,6 +1,9 @@
+import sys
+import os
+os.environ['PYTHONUNBUFFERED'] = '1'
+
 from flask import Flask, render_template, request
 import fitz
-import os
 import re
 import json
 import base64
@@ -58,7 +61,8 @@ Devolvé SOLO el JSON sin texto adicional ni markdown.
     if filepath.lower().endswith(".pdf"):
         images_b64 = pdf_to_base64_images(filepath)
         if not images_b64:
-            print("ERROR: PDF sin imágenes")
+            sys.stdout.write("ERROR: PDF sin imagenes\n")
+            sys.stdout.flush()
             return {}
         b64 = images_b64[0]
         media_type = "image/png"
@@ -67,7 +71,9 @@ Devolvé SOLO el JSON sin texto adicional ni markdown.
         ext = filepath.lower().split(".")[-1]
         media_type = "image/jpeg" if ext in ["jpg", "jpeg"] else "image/png"
 
-    print("Llamando a Mistral...")
+    sys.stdout.write("Llamando a Mistral...\n")
+    sys.stdout.flush()
+
     response = requests.post(
         "https://api.mistral.ai/v1/chat/completions",
         headers={
@@ -94,15 +100,17 @@ Devolvé SOLO el JSON sin texto adicional ni markdown.
         }
     )
 
-    print("STATUS MISTRAL:", response.status_code)
-    print("RESPUESTA MISTRAL:", response.text[:500])
+    sys.stdout.write(f"STATUS: {response.status_code}\n")
+    sys.stdout.write(f"RESPUESTA: {response.text[:500]}\n")
+    sys.stdout.flush()
 
     try:
         text = response.json()["choices"][0]["message"]["content"].strip()
         text = re.sub(r"```json|```", "", text).strip()
         return json.loads(text)
     except Exception as e:
-        print("ERROR PARSEANDO:", e)
+        sys.stdout.write(f"ERROR PARSEANDO: {e}\n")
+        sys.stdout.flush()
         return {}
 
 def get_credentials():
@@ -120,6 +128,8 @@ def get_credentials():
 def send_to_google_sheets(data, filename):
     creds_dict = get_credentials()
     if not creds_dict:
+        sys.stdout.write("ERROR: Sin credenciales Google\n")
+        sys.stdout.flush()
         return
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
@@ -165,22 +175,25 @@ def index():
     results = []
     if request.method == "POST":
         files = request.files.getlist("file")
-        print("ARCHIVOS RECIBIDOS:", len(files))
+        sys.stdout.write(f"ARCHIVOS RECIBIDOS: {len(files)}\n")
+        sys.stdout.flush()
         for file in files:
-            print("ARCHIVO:", file.filename)
+            sys.stdout.write(f"ARCHIVO: {file.filename}\n")
+            sys.stdout.flush()
             if file and file.filename:
                 filename = file.filename
                 filepath = os.path.join(UPLOAD_FOLDER, filename)
                 file.save(filepath)
-                print("GUARDADO EN:", filepath)
                 data = ocr_with_mistral(filepath)
-                print("DATA FINAL:", data)
+                sys.stdout.write(f"DATA FINAL: {data}\n")
+                sys.stdout.flush()
                 parsed = [{"Campo": k.replace("_", " ").title(), "Valor": v} for k, v in data.items()]
                 results.append({"filename": filename, "parsed": parsed})
                 try:
                     send_to_google_sheets(data, filename)
                 except Exception as e:
-                    print("Error Google Sheets:", e)
+                    sys.stdout.write(f"Error Google Sheets: {e}\n")
+                    sys.stdout.flush()
     return render_template("index.html", results=results, banco=None, operacion=None)
 
 if __name__ == "__main__":
