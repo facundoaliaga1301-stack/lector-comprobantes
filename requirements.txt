@@ -3,4 +3,5 @@ Pillow
 PyMuPDF
 gspread
 oauth2client
-mistralai==2.4.3
+requests
+openpyxl
