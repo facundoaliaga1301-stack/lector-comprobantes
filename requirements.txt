@@ -3,4 +3,4 @@ Pillow
 PyMuPDF
 gspread
 oauth2client
-google-generativeai
+mistralai

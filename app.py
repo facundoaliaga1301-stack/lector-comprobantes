@@ -6,7 +6,7 @@ import json
 import base64
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import google.generativeai as genai
+from mistralai import Mistral
 from PIL import Image
 import io
 
@@ -17,24 +17,27 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 SHEET_ID = "17yVw5YF4MY9Hi5dCYl9zGh0m7k3XsJIn7rUTwbzy6LY"
 SHEET_NAME = "Hoja 1"
 
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+client_mistral = Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
 
-def pdf_to_images(filepath):
+def pdf_to_base64_images(filepath):
     doc = fitz.open(filepath)
     images = []
+    mat = fitz.Matrix(2, 2)
     for page in doc:
-        mat = fitz.Matrix(2, 2)
         pix = page.get_pixmap(matrix=mat, alpha=False)
-        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-        images.append(img)
+        img_bytes = pix.tobytes("png")
+        b64 = base64.b64encode(img_bytes).decode("utf-8")
+        images.append(b64)
     return images
 
-def ocr_with_gemini(filepath):
-    model = genai.GenerativeModel("gemini-2.0-flash")
-    
-    prompt = """Analizá este comprobante bancario o documento financiero y extraé los siguientes datos en formato JSON.
-Si no encontrás algún campo, dejalo como string vacío "".
-Devolvé SOLO el JSON, sin texto adicional, sin markdown, sin explicaciones.
+def image_to_base64(filepath):
+    with open(filepath, "rb") as f:
+        return base64.b64encode(f.read()).decode("utf-8")
+
+def ocr_with_mistral(filepath):
+    prompt = """Analizá este comprobante bancario o documento financiero y extraé los datos en formato JSON.
+Si no encontrás algún campo dejalo como string vacío "".
+Devolvé SOLO el JSON sin texto adicional ni markdown.
 
 {
   "tipo_documento": "",
@@ -56,17 +59,37 @@ Devolvé SOLO el JSON, sin texto adicional, sin markdown, sin explicaciones.
 }"""
 
     if filepath.lower().endswith(".pdf"):
-        images = pdf_to_images(filepath)
-        if not images:
+        images_b64 = pdf_to_base64_images(filepath)
+        if not images_b64:
             return {}
-        img = images[0]
+        b64 = images_b64[0]
+        media_type = "image/png"
     else:
-        img = Image.open(filepath)
+        b64 = image_to_base64(filepath)
+        ext = filepath.lower().split(".")[-1]
+        media_type = "image/jpeg" if ext in ["jpg", "jpeg"] else "image/png"
 
-    response = model.generate_content([prompt, img])
-    
+    response = client_mistral.chat.complete(
+        model="pixtral-12b-2409",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": f"data:{media_type};base64,{b64}"
+                    },
+                    {
+                        "type": "text",
+                        "text": prompt
+                    }
+                ]
+            }
+        ]
+    )
+
     try:
-        text = response.text.strip()
+        text = response.choices[0].message.content.strip()
         text = re.sub(r"```json|```", "", text).strip()
         return json.loads(text)
     except:
@@ -97,7 +120,7 @@ def send_to_google_sheets(data, filename):
                "Cuenta Origen", "Titular Origen", "CUIT Origen",
                "Cuenta Destino", "Titular Destino", "CUIT Destino",
                "N° Referencia", "Motivo", "Concepto", "Estado"]
-    
+
     try:
         values = sheet.get_all_values()
     except:
@@ -137,7 +160,7 @@ def index():
                 filename = file.filename
                 filepath = os.path.join(UPLOAD_FOLDER, filename)
                 file.save(filepath)
-                data = ocr_with_gemini(filepath)
+                data = ocr_with_mistral(filepath)
                 parsed = [{"Campo": k.replace("_", " ").title(), "Valor": v} for k, v in data.items()]
                 results.append({"filename": filename, "parsed": parsed})
                 try:
