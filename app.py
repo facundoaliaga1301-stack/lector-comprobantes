@@ -33,7 +33,7 @@ def image_to_base64(filepath):
 
 def ocr_with_mistral(filepath):
     prompt = """Analizá este comprobante bancario o documento financiero y extraé los datos en formato JSON.
-Si no encontrás algún campo dejalo como string vacío "".
+Si no encontrás algún campo dejalo como string vacío.
 Devolvé SOLO el JSON sin texto adicional ni markdown.
 
 {
@@ -165,6 +165,7 @@ def index():
                 filepath = os.path.join(UPLOAD_FOLDER, filename)
                 file.save(filepath)
                 data = ocr_with_mistral(filepath)
+                print("RESPUESTA MISTRAL:", data)
                 parsed = [{"Campo": k.replace("_", " ").title(), "Valor": v} for k, v in data.items()]
                 results.append({"filename": filename, "parsed": parsed})
                 try:
