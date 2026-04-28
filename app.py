@@ -18,6 +18,7 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY")
+ultimo_excel = None
 
 def pdf_to_base64_images(filepath):
     doc = fitz.open(filepath)
@@ -150,10 +151,11 @@ def generate_excel(results):
     buffer = BytesIO()
     wb.save(buffer)
     buffer.seek(0)
-    return buffer
+    return buffer.read()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    global ultimo_excel
     results = []
     if request.method == "POST":
         files = request.files.getlist("file")
@@ -165,13 +167,16 @@ def index():
                 data = ocr_with_mistral(filepath)
                 parsed = [{"Campo": k.replace("_", " ").title(), "Valor": v} for k, v in data.items()]
                 results.append({"filename": filename, "parsed": parsed, "data": data})
+        if results:
+            ultimo_excel = generate_excel(results)
     return render_template("index.html", results=results)
 
-@app.route("/descargar", methods=["POST"])
-def descargar():
-    data_json = request.form.get("data")
-    results = json.loads(data_json)
-    buffer = generate_excel(results)
+@app.route("/descargar-ultimo")
+def descargar_ultimo():
+    global ultimo_excel
+    if not ultimo_excel:
+        return "No hay datos para descargar", 404
+    buffer = BytesIO(ultimo_excel)
     filename = f"comprobantes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     return send_file(buffer, as_attachment=True, download_name=filename,
                      mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

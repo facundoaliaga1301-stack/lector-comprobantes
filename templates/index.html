@@ -7,36 +7,25 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f8f6; min-height: 100vh; }
-
     .topbar { background: white; border-bottom: 0.5px solid #e0e0d8; padding: 12px 24px; display: flex; align-items: center; gap: 10px; }
     .topbar-dot { width: 8px; height: 8px; border-radius: 50%; background: #1a3d1a; }
     .topbar-title { font-size: 14px; font-weight: 500; color: #1a3d1a; }
     .topbar-sub { font-size: 12px; color: #aaa; margin-left: 4px; }
-
     .container { max-width: 700px; margin: 40px auto; padding: 0 24px; }
-
     .card { background: white; border: 0.5px solid #e0e0d8; border-radius: 16px; padding: 28px; margin-bottom: 20px; }
-
     label { display: block; font-size: 12px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
-
-    select { width: 100%; padding: 9px 12px; border: 0.5px solid #e0e0d8; border-radius: 8px; font-size: 13px; background: white; color: #1a1a1a; appearance: none; cursor: pointer; outline: none; }
-    select:focus { border-color: #1a3d1a; }
-
     .field { margin-bottom: 16px; }
-
     .upload-area { border: 1.5px dashed #c0d8c0; border-radius: 12px; padding: 32px; text-align: center; cursor: pointer; transition: background 0.2s; background: #f8fdf8; margin-bottom: 16px; }
     .upload-area:hover { background: #f0f8f0; border-color: #1a3d1a; }
     .upload-area input { display: none; }
-    .upload-icon { font-size: 28px; margin-bottom: 8px; }
     .upload-text { font-size: 13px; color: #888; }
     .upload-text strong { color: #1a3d1a; }
     .file-count { font-size: 12px; color: #1a3d1a; margin-top: 6px; font-weight: 500; }
-
     .btn { width: 100%; padding: 11px; background: #1a3d1a; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
     .btn:hover { opacity: 0.85; }
-
+    .btn-download { display: block; width: 100%; padding: 11px; background: white; color: #1a3d1a; border: 1.5px solid #1a3d1a; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 12px; text-align: center; text-decoration: none; }
+    .btn-download:hover { background: #f0f8f0; }
     .results-title { font-size: 15px; font-weight: 500; color: #1a3d1a; margin-bottom: 16px; }
-
     .result-card { background: white; border: 0.5px solid #e0e0d8; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
     .result-header { background: #e8f0e0; padding: 10px 16px; font-size: 12px; font-weight: 500; color: #1a3d1a; border-bottom: 0.5px solid #c0d8c0; }
     .result-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -46,47 +35,28 @@
     .result-table td:first-child { color: #888; width: 45%; font-size: 12px; }
     .result-table td:last-child { color: #1a1a1a; font-weight: 500; }
     .result-table tr:nth-child(even) { background: #fafafa; }
-
     .empty-val { color: #ccc !important; font-weight: 400 !important; font-style: italic; }
   </style>
 </head>
 <body>
-
 <div class="topbar">
   <div class="topbar-dot"></div>
   <span class="topbar-title">A-SA</span>
   <span class="topbar-sub">/ Lector de comprobantes</span>
 </div>
-
 <div class="container">
   <div class="card">
     <form method="POST" enctype="multipart/form-data">
       <div class="field">
-        <label>Banco</label>
-        <select name="banco">
-          <option value="BBVA" {% if banco == 'BBVA' %}selected{% endif %}>BBVA</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Operación</label>
-        <select name="operacion">
-          <option value="Transferencias" {% if operacion == 'Transferencias' %}selected{% endif %}>Transferencias</option>
-          <option value="Efectivo" {% if operacion == 'Efectivo' %}selected{% endif %}>Efectivo</option>
-        </select>
-      </div>
-
-      <div class="field">
         <label>Archivos</label>
         <label class="upload-area" for="fileInput">
-          <div class="upload-icon">📄</div>
+          <div style="font-size:28px;margin-bottom:8px">📄</div>
           <div class="upload-text">Arrastrá o <strong>elegí archivos</strong> para subir</div>
           <div class="upload-text">PDF o imagen — podés seleccionar varios</div>
           <div class="file-count" id="fileCount"></div>
           <input type="file" name="file" id="fileInput" multiple accept=".pdf,.png,.jpg,.jpeg" onchange="updateCount(this)">
         </label>
       </div>
-
       <button type="submit" class="btn">Procesar comprobantes</button>
     </form>
   </div>
@@ -106,16 +76,14 @@
     </table>
   </div>
   {% endfor %}
+  <a href="/descargar-ultimo" class="btn-download">⬇ Descargar Excel con todos los datos</a>
   {% endif %}
-
 </div>
-
 <script>
   function updateCount(input) {
     const count = input.files.length;
     document.getElementById('fileCount').textContent = count > 0 ? count + ' archivo' + (count > 1 ? 's' : '') + ' seleccionado' + (count > 1 ? 's' : '') : '';
   }
 </script>
-
 </body>
 </html>
