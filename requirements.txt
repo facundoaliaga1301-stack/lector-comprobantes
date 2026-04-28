@@ -3,5 +3,4 @@ Pillow
 PyMuPDF
 gspread
 oauth2client
-google-cloud-vision
-google-auth
+google-generativeai
