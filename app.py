@@ -58,6 +58,7 @@ Devolvé SOLO el JSON sin texto adicional ni markdown.
     if filepath.lower().endswith(".pdf"):
         images_b64 = pdf_to_base64_images(filepath)
         if not images_b64:
+            print("ERROR: PDF sin imágenes")
             return {}
         b64 = images_b64[0]
         media_type = "image/png"
@@ -66,6 +67,7 @@ Devolvé SOLO el JSON sin texto adicional ni markdown.
         ext = filepath.lower().split(".")[-1]
         media_type = "image/jpeg" if ext in ["jpg", "jpeg"] else "image/png"
 
+    print("Llamando a Mistral...")
     response = requests.post(
         "https://api.mistral.ai/v1/chat/completions",
         headers={
@@ -92,11 +94,15 @@ Devolvé SOLO el JSON sin texto adicional ni markdown.
         }
     )
 
+    print("STATUS MISTRAL:", response.status_code)
+    print("RESPUESTA MISTRAL:", response.text[:500])
+
     try:
         text = response.json()["choices"][0]["message"]["content"].strip()
         text = re.sub(r"```json|```", "", text).strip()
         return json.loads(text)
-    except:
+    except Exception as e:
+        print("ERROR PARSEANDO:", e)
         return {}
 
 def get_credentials():
@@ -159,13 +165,16 @@ def index():
     results = []
     if request.method == "POST":
         files = request.files.getlist("file")
+        print("ARCHIVOS RECIBIDOS:", len(files))
         for file in files:
+            print("ARCHIVO:", file.filename)
             if file and file.filename:
                 filename = file.filename
                 filepath = os.path.join(UPLOAD_FOLDER, filename)
                 file.save(filepath)
+                print("GUARDADO EN:", filepath)
                 data = ocr_with_mistral(filepath)
-                print("RESPUESTA MISTRAL:", data)
+                print("DATA FINAL:", data)
                 parsed = [{"Campo": k.replace("_", " ").title(), "Valor": v} for k, v in data.items()]
                 results.append({"filename": filename, "parsed": parsed})
                 try:
